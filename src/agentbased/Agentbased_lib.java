@@ -11,7 +11,8 @@ public class Agentbased_lib {
 	private int K; //ノード数
 	private int N; //系内の客数
 	private int C; //クラス数
-	ArrayList<Integer> customer[];
+	ArrayList<Integer> customer[];//ノードで並んでいる客のクラス(並んでいる順番に)
+	ArrayList<Integer> timequeue[]; //時系列の各ノードでの客数
 	
 	public Agentbased_lib(double[][] mu, double[] popularity, int time, int n, int k, int c) {
 		this.mu = mu;
@@ -21,7 +22,9 @@ public class Agentbased_lib {
 		N = n;
 		C = c;
 		this.customer = new ArrayList[K];
+		this.timequeue = new ArrayList[K];
 		for(int i = 0; i < customer.length; i++) customer[i] = new ArrayList<Integer>();
+		for(int i = 0; i < timequeue.length; i++) timequeue[i] = new ArrayList<Integer>();
 	}
 
 	public double[] getSimulation() {
@@ -53,8 +56,8 @@ public class Agentbased_lib {
 				}
 			}
 			//mini_indexの時のクラス
-			//mini_class = customer[mini_index].get(0);
-			//customer[mini_index].remove(0);//先頭を削除
+			mini_class = customer[mini_index].get(0);
+			customer[mini_index].remove(0);//先頭を削除
 			
 			for(int i = 0; i < K; i++) { //ノードiから退去
 				total_queue[i] += queue[i] * mini_service;
@@ -66,7 +69,7 @@ public class Agentbased_lib {
 			queue[mini_index] --;
 			elapse += mini_service;
 			if( queue[mini_index] > 0) //退去後まだ待ち人数がある場合、サービス時間設定
-				service[mini_index] = this.getExponential(mu[0][mini_index]);
+				service[mini_index] = this.getExponential(mu[mini_class][mini_index]);
 			
 			//退去客の行き先決定
 			//ここから実装する
@@ -93,9 +96,11 @@ public class Agentbased_lib {
 				weight[i] = weight[i] / sum_weight;
 			}
 			//行き先決定
+			//クラスは確率p_classで変化(p_class = 0.9程度)
 			double rand = rnd.nextDouble();
 			double sum_rand = 0;
 			int destination_index = -1;
+			//行き先
 			for(int i = 0; i < weight.length; i++) {
 				sum_rand += weight[i];
 				if( rand < sum_rand) {
@@ -103,20 +108,34 @@ public class Agentbased_lib {
 					break;
 				}
 			}
+			//クラス
+			int destination_class = -1;
+			double p_class = 0.9; //同じクラスへの滞在率
+			double rand_class = rnd.nextDouble();
+			if(rand_class <= p_class) {
+				destination_class = mini_class;
+			}else { //ひとまずクラスが2の場合
+				destination_class = (mini_class +1) % 2;
+			}
+			
 			//行き先が決まらない場合
 			if( destination_index == -1) {
 				destination_index = K-1;//クラスの最後のノードにしておく
 			}
 			//推移先で待っている客がいなければサービス時間設定(即時サービス)
 			if(queue[destination_index] == 0) {
-				service[destination_index] = this.getExponential(mu[0][destination_index]);
+				service[destination_index] = this.getExponential(mu[destination_class][destination_index]);
 			}
 			queue[destination_index]++;
+			customer[destination_index].add(destination_class);
+			
+			//時系列での各ノードにおける客数(クラス別ではない)
+			for(int i = 0; i < timequeue.length; i++)
+				timequeue[i].add(customer[i].size());
 		}
 		for(int i = 0; i < K; i++) {
 			result[i] = total_queue[i] / time; //平均系内人数
 		}
-		
 		return result;
 	}
 	
@@ -124,4 +143,9 @@ public class Agentbased_lib {
 	public double getExponential(double param) {
 		return - Math.log(1 - rnd.nextDouble()) / param;
 	}
+
+	public ArrayList<Integer>[] getTimequeue() {
+		return timequeue;
+	}
+	
 }

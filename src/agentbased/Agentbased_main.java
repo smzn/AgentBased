@@ -1,5 +1,6 @@
 package agentbased;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Agentbased_main {
@@ -15,6 +16,10 @@ public class Agentbased_main {
 		Agentbased_lib alib = new Agentbased_lib(mu, popularity, time, N, K, C);
 		double[] result = alib.getSimulation();
 		System.out.println("L = "+Arrays.toString(result));
+		//ArrayList<Integer> timequeue[] = alib.getTimequeue();
+		Graph graph = new Graph(alib);
+		graph.setBounds(5,5,755,455);
+		graph.setVisible(true);
 	}
 
 }
