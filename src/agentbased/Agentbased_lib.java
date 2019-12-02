@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class Agentbased_lib {
-	private double mu[][], popularity[]; 
+	private double mu[][], popularity[], distance[][]; 
 	private int time;
 	Random rnd = new Random();
 	private int K; //ノード数
@@ -14,9 +14,10 @@ public class Agentbased_lib {
 	ArrayList<Integer> customer[];//ノードで並んでいる客のクラス(並んでいる順番に)
 	ArrayList<Integer> timequeue[]; //時系列の各ノードでの客数
 	
-	public Agentbased_lib(double[][] mu, double[] popularity, int time, int n, int k, int c) {
+	public Agentbased_lib(double[][] mu, double[] popularity, double[][] distance, int time, int n, int k, int c) {
 		this.mu = mu;
 		this.popularity = popularity;
+		this.distance = distance;
 		this.time = time;
 		K = k;
 		N = n;
@@ -73,19 +74,24 @@ public class Agentbased_lib {
 			
 			//退去客の行き先決定
 			//ここから実装する
-			//(1)人気のある拠点にいきたい
-			//(2)待ち人数が多いところには行きたくない
+			//(1)人気のある拠点にいきたい (重力モデル分子)
+			//(2)待ち人数が多いところには行きたくない (目的関数)
+			//(3)近いところに行きたい (重力モデル分母)
 			/*
 			 人気度(割合) + 現在の空き人数(Nで割る)をウエイトとする
 			 空き人数はN/Kをキャパとする
 			 */
-			int sum_popularity = 0;
+			int sum_popularity = 0; //人気度の和
 			for(int i = 0; i < popularity.length;i++) {
 				sum_popularity += popularity[i];
 			}
+			double sum_distance = 0; //mini_indexからの距離の総和
+			for(int i = 0; i < distance[mini_index].length; i++) {
+				sum_distance += distance[mini_index][i];
+			}
 			double[] weight = new double[K];
 			for(int i = 0; i < weight.length; i++) {
-				weight[i] = popularity[i]/sum_popularity + (N/K - queue[i])/N;
+				weight[i] = popularity[i]/sum_popularity + (N/K - queue[i])/N + (sum_distance/distance[mini_index][i])/1000;
 			}
 			//System.out.println("Weight = "+Arrays.toString(weight));
 			double sum_weight = 0;
